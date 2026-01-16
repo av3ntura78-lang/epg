@@ -22,7 +22,10 @@ jobs:
         run: npm install
 
       - name: Generate EPG
-        run: npm run grab --- --channels=custom.xml
+        run: npm run grab -- --channels=custom.xml --output=epg.xml
+
+      - name: List output files
+        run: ls -R .
 
       - name: Checkout tv-online repo
         uses: actions/checkout@v4
@@ -31,16 +34,138 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           path: output_repo
 
-      - name: Copy epg.xml în repo-ul tv-online
-        run: cp epg.xml output_repo/epg.xml
+      - name: Copy epg.xml în subfolderul /epg
+        run: |
+          mkdir -p output_repo/epg
+          cp epg.xml output_repo/epg/epg.xml
 
       - name: Commit & Push
         run: |
           cd output_repo
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add epg.xml
-          git commit -m "Update EPG"
+          git add epg/epg.xml
+          git commit -m "Update EPG" || echo "No changes to commit"
+          git push
+
+      - name: Send Telegram notification
+        if: always()
+        run: |
+          STATUS="EPG updated successfully"
+          if [ "${{ job.status }}" != "success" ]; then
+            STATUS="EPG generation FAILED"
+          fi
+
+          curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
+            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+            -d text="📡 IPTV EPG Update\nStatus: $STATUS\nRepo: av3ntura78-lang/tv-online"name: Generate EPG
+
+on:
+  schedule:
+    - cron: "0 12 * * *"   # rulează zilnic la 12:00 UTC
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout fork iptv-org/epg
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Generate EPG
+        run: npm run grab -- --channels=custom.xml --output=epg.xml
+
+      - name: List output files
+        run: ls -R .
+
+      - name: Checkout tv-online repo
+        uses: actions/checkout@v4
+        with:
+          repository: av3ntura78-lang/tv-online
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: output_repo
+
+      - name: Copy epg.xml în subfolderul /epg
+        run: |
+          mkdir -p output_repo/epg
+          cp epg.xml output_repo/epg/epg.xml
+
+      - name: Commit & Push
+        run: |
+          cd output_repo
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add epg/epg.xml
+          git commit -m "Update EPG" || echo "No changes to commit"
+          git push
+
+      - name: Send Telegram notification
+        if: always()
+        run: |
+          STATUS="EPG updated successfully"
+          if [ "${{ job.status }}" != "success" ]; then
+            STATUS="EPG generation FAILED"
+          fi
+
+          curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
+            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+            -d text="📡 IPTV EPG Update\nStatus: $STATUS\nRepo: av3ntura78-lang/tv-online"name: Generate EPG
+
+on:
+  schedule:
+    - cron: "0 12 * * *"   # rulează zilnic la 12:00 UTC
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout fork iptv-org/epg
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Generate EPG
+        run: npm run grab -- --channels=custom.xml --output=epg.xml
+
+      - name: List output files
+        run: ls -R .
+
+      - name: Checkout tv-online repo
+        uses: actions/checkout@v4
+        with:
+          repository: av3ntura78-lang/tv-online
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: output_repo
+
+      - name: Copy epg.xml în subfolderul /epg
+        run: |
+          mkdir -p output_repo/epg
+          cp epg.xml output_repo/epg/epg.xml
+
+      - name: Commit & Push
+        run: |
+          cd output_repo
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add epg/epg.xml
+          git commit -m "Update EPG" || echo "No changes to commit"
           git push
 
       - name: Send Telegram notification
