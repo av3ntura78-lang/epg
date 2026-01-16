@@ -1,0 +1,44 @@
+name: Generate EPG
+
+on:
+  schedule:
+    - cron: "0 12 * * *"   # rulează zilnic la ora 12:00 UTC
+  workflow_dispatch:        # permite rularea manuală
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo-ul cu fork-ul iptv-org/epg
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Generate EPG
+        run: npm run grab --- --channels=custom.xml
+
+      - name: Checkout repo-ul tv-online/epg
+        uses: actions/checkout@v4
+        with:
+          repository: tv-online/epg
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: output_repo
+
+      - name: Copy epg.xml în repo-ul tv-online/epg
+        run: cp epg.xml output_repo/epg.xml
+
+      - name: Commit & Push
+        run: |
+          cd output_repo
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add epg.xml
+          git commit -m "Update EPG"
+          git push
