@@ -2,15 +2,15 @@ name: Generate EPG
 
 on:
   schedule:
-    - cron: "0 12 * * *"   # rulează zilnic la ora 12:00 UTC
-  workflow_dispatch:        # permite rularea manuală
+    - cron: "0 12 * * *"   # rulează zilnic la 12:00 UTC
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo-ul cu fork-ul iptv-org/epg
+      - name: Checkout fork iptv-org/epg
         uses: actions/checkout@v4
 
       - name: Set up Node.js
@@ -24,14 +24,14 @@ jobs:
       - name: Generate EPG
         run: npm run grab --- --channels=custom.xml
 
-      - name: Checkout repo-ul tv-online/epg
+      - name: Checkout tv-online/epg repo
         uses: actions/checkout@v4
         with:
           repository: tv-online/epg
           token: ${{ secrets.GITHUB_TOKEN }}
           path: output_repo
 
-      - name: Copy epg.xml în repo-ul tv-online/epg
+      - name: Copy epg.xml
         run: cp epg.xml output_repo/epg.xml
 
       - name: Commit & Push
@@ -42,3 +42,15 @@ jobs:
           git add epg.xml
           git commit -m "Update EPG"
           git push
+
+      - name: Send Telegram notification
+        if: always()
+        run: |
+          STATUS="EPG updated successfully"
+          if [ "${{ job.status }}" != "success" ]; then
+            STATUS="EPG generation FAILED"
+          fi
+
+          curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
+            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+            -d text="📡 IPTV EPG Update\nStatus: $STATUS\nRepo: tv-online/epg"
