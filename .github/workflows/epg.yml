@@ -24,14 +24,14 @@ jobs:
       - name: Generate EPG
         run: npm run grab --- --channels=custom.xml
 
-      - name: Checkout tv-online/epg repo
+      - name: Checkout tv-online repo
         uses: actions/checkout@v4
         with:
-          repository: tv-online/epg
+          repository: av3ntura78-lang/tv-online
           token: ${{ secrets.GITHUB_TOKEN }}
           path: output_repo
 
-      - name: Copy epg.xml
+      - name: Copy epg.xml în repo-ul tv-online
         run: cp epg.xml output_repo/epg.xml
 
       - name: Commit & Push
@@ -53,4 +53,4 @@ jobs:
 
           curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
             -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-            -d text="📡 IPTV EPG Update\nStatus: $STATUS\nRepo: tv-online/epg"
+            -d text="📡 IPTV EPG Update\nStatus: $STATUS\nRepo: av3ntura78-lang/tv-online"
