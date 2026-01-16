@@ -2,7 +2,7 @@ name: Generate EPG
 
 on:
   schedule:
-    - cron: "0 12 * * *"
+    - cron: "0 12 * * *"   # rulează zilnic la 12:00 UTC
   workflow_dispatch:
 
 jobs:
@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout fork iptv-org/epg
+      - name: Checkout repo
         uses: actions/checkout@v4
 
       - name: Set up Node.js
@@ -27,31 +27,11 @@ jobs:
       - name: List output files
         run: ls -R .
 
-      - name: Check if epg.xml exists
+      - name: Commit epg.xml în acest repo
         run: |
-          if [ ! -f epg.xml ]; then
-            echo "epg.xml NU a fost generat!"
-            exit 1
-          fi
-
-      - name: Checkout tv-online repo
-        uses: actions/checkout@v4
-        with:
-          repository: av3ntura78-lang/tv-online
-          token: ${{ secrets.GITHUB_TOKEN }}
-          path: output_repo
-
-      - name: Copy epg.xml în subfolderul /epg
-        run: |
-          mkdir -p output_repo/epg
-          cp epg.xml output_repo/epg/epg.xml
-
-      - name: Commit & Push
-        run: |
-          cd output_repo
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add epg/epg.xml
+          git add epg.xml
           git commit -m "Update EPG" || echo "No changes to commit"
           git push
 
@@ -65,4 +45,4 @@ jobs:
 
           curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
             -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-            -d text="📡 IPTV EPG Update\nStatus: $STATUS\nRepo: av3ntura78-lang/tv-online"
+            -d text="📡 IPTV EPG Update\nStatus: $STATUS\nRepo: $(echo $GITHUB_REPOSITORY)"
